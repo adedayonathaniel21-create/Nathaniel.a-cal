@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deterministic Casio fx-991ES Plus Engine</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --calc-body: #1e222b;
+            --screen-bg: #0d1f14;
+            --screen-glow: #39e672;
+            --btn-dark-gray: #282e3b;
+            --btn-light-gray: #3a4253;
+            --btn-num-white: #4e596f;
+            --btn-orange: #ff6b35;
+            --lbl-gold: #ffcc00;
+            --lbl-red: #ff4d4d;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            user-select: none;
+        }
+
+        .calculator-container {
+            width: 380px;
+            background: linear-gradient(145deg, #232731, #181b22);
+            padding: 25px;
+            border-radius: 40px;
+            box-shadow: 0px 30px 60px rgba(0,0,0,0.6),
+                        inset 0 2px 3px rgba(255,255,255,0.1);
+            border: 1px solid #2d3342;
+        }
+
+        .calculator-header {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 5px;
+        }
+
+        .brand {
+            font-weight: 900;
+            font-size: 1.2rem;
+            letter-spacing: 1.5px;
+            color: #e2e8f0;
+        }
+
+        .solar-panel {
+            width: 90px;
+            height: 20px;
+            background: linear-gradient(to right, #4a1515, #220505);
+            border: 1px solid #3a3f4d;
+            border-radius: 6px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .model {
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #64748b;
+        }
+
+        .sub-brand {
+            grid-column: span 3;
+            text-align: left;
+            font-size: 0.6rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #475569;
+            margin: 6px 0 5px 2px;
+        }
+
+        .screen-container {
+            background-color: var(--screen-bg);
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.8),
+                        0 1px 2px rgba(255,255,255,0.05);
+            border: 2px solid #1c2421;
+            color: var(--screen-glow);
+            text-shadow: 0 0 4px rgba(57, 230, 114, 0.3);
+            margin-bottom: 25px;
+        }
+
+        .screen-status-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            height: 16px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+
+        .indicator {
+            visibility: hidden;
+        }
+        .indicator.active {
+            visibility: visible;
+        }
+
+        .screen-history {
+            height: 24px;
+            font-size: 1.05rem;
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            opacity: 0.7;
+        }
+
+        .screen-main {
+            height: 42px;
+            font-size: 2.1rem;
+            font-family: 'Courier New', monospace;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 18px 12px;
+        }
+
+        .btn {
+            position: relative;
+            border: none;
+            outline: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.08s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lbl-top {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.58rem;
+            color: var(--lbl-gold);
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .lbl-top-left {
+            position: absolute;
+            top: -14px;
+            left: 2px;
+            font-size: 0.58rem;
+            color: var(--lbl-gold);
+            font-weight: 700;
+        }
+
+        .lbl-top-left-red {
+            position: absolute;
+            top: -14px;
+            left: 2px;
+            font-size: 0.58rem;
+            color: var(--lbl-red);
+            font-weight: 700;
+        }
+
+        .lbl-top-red {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.58rem;
+            color: var(--lbl-red);
+            font-weight: 700;
+        }
+
+        /* Entirely new custom pill/capsule shapes */
+        .btn-oval {
+            height: 28px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            box-shadow: 0 3px 0 #222731, 0 4px 6px rgba(0,0,0,0.4);
+        }
+
+        .btn-rect {
+            height: 30px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            box-shadow: 0 3px 0 #12151b, 0 4px 5px rgba(0,0,0,0.4);
+        }
+
+        .btn-num {
+            height: 40px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            background-color: var(--btn-num-white);
+            color: #ffffff;
+            box-shadow: 0 4px 0 #333b4a, 0 6px 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-orange {
+            height: 40px;
+            border-radius: 12px;
+            font-size: 1rem;
+            background-color: var(--btn-orange);
+            color: white;
+            box-shadow: 0 4px 0 #b84318, 0 6px 10px rgba(0,0,0,0.5);
+        }
+
+        .btn-gray { background-color: var(--btn-light-gray); color: #fff; }
+        .btn-dark { background-color: var(--btn-dark-gray); color: #94a3b8; }
+
+        /* Stylized Action Row highlights */
+        .keypad button[onclick*="'ADD'"],
+        .keypad button[onclick*="'SUB'"],
+        .keypad button[onclick*="'MUL'"],
+        .keypad button[onclick*="'DIV'"],
+        .keypad button[onclick*="'EXE'"] {
+            background-color: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 4px 0 #035a87, 0 6px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Circular tracking directional pad interface */
+        .replay-pad-container {
+            grid-column: span 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            background: #2e3543;
+            border-radius: 14px;
+            width: 100%;
+            height: 54px;
+            margin-top: -10px;
+            padding: 4px 0;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 2px 3px rgba(255,255,255,0.05);
+            border: 1px solid #1e222b;
+        }
+
+        .btn-replay {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.65rem;
+            padding: 2px;
+            line-height: 1;
+        }
+        .replay-middle {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 6px;
+            box-sizing: border-box;
+            align-items: center;
+        }
+        .replay-label {
+            font-size: 0.4rem;
+            font-weight: 800;
+            color: #475569;
+        }
+
+        .btn:active, .btn-replay:active {
+            transform: translateY(3px);
+            box-shadow: 0 0 transparent !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator-container">
+        <div class="calculator-header">
+            <div class="brand">CASIO</div>
+            <div class="solar-panel"></div>
+            <div class="model">fx-991ES PLUS</div>
+            <div class="sub-brand">NATURAL-V.P.A.M.</div>
+        </div>
+
+        <div class="screen-container">
+            <div class="screen-status-bar">
+                <span id="shift-indicator" class="indicator">S</span>
+                <span id="alpha-indicator" class="indicator">A</span>
+                <span id="angle-indicator" class="indicator active">DEG</span>
+            </div>
+            <div class="screen-history" id="history-display"></div>
+            <div class="screen-main" id="main-display">0</div>
+        </div>
+
+        <div class="keypad">
+            <button class="btn btn-oval btn-gray modifier" onclick="pressModifier('SHIFT')">
+                <span class="lbl-top-left">■</span>SHIFT
+            </button>
+            <button class="btn btn-oval btn-gray modifier" onclick="pressModifier('ALPHA')">
+                <span class="lbl-top-left-red">■</span>ALPHA
+            </button>
+            
+            <div class="replay-pad-container">
+                <button class="btn-replay" onclick="pressKey('UP')">▲</button>
+                <div class="replay-middle">
+                    <button class="btn-replay" onclick="pressKey('LEFT')">◀</button>
+                    <span class="replay-label">REPLAY</span>
+                    <button class="btn-replay" onclick="pressKey('RIGHT')">▶</button>
+                </div>
+                <button class="btn-replay" onclick="pressKey('DOWN')">▼</button>
+            </div>
+            
+            <button class="btn btn-oval btn-gray" onclick="pressKey('MODE')">MODE</button>
+            <button class="btn btn-oval btn-gray" onclick="pressKey('ON')">ON</button>
+
+            <button class="btn btn-rect btn-dark" onclick="pressKey('CALC')">
+                <span class="lbl-top">SOLVE</span>C<sub>A</sub>C
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('INTEGRAL')">
+                <span class="lbl-top">d/dx</span>∫dx
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('X_MINUS_1')">
+                <span class="lbl-top">x!</span>x⁻¹
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('LOG_BASE')">
+                <span class="lbl-top">∑</span>log<sub>■</sub>■
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('FRACTION')">
+                <span class="lbl-top">■/■</span>■/■
+            </button>
+
+            <button class="btn btn-rect btn-dark" onclick="pressKey('SQRT')">
+                <span class="lbl-top">³√■</span>√■
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('SQUARE')">
+                <span class="lbl-top">x³</span>x²
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('POWER')">
+                <span class="lbl-top"><sup>x</sup>√■</span>x<sup>■</sup>
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('LOG')">
+                <span class="lbl-top">10<sup>x</sup></span>log
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('LN')">
+                <span class="lbl-top">e<sup>x</sup></span>ln
+            </button>
+
+            <button class="btn btn-rect btn-dark" onclick="pressKey('NEG')">
+                <span class="lbl-top">←</span>(-)
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('DEGREE')">
+                <span class="lbl-top">←</span>°'""
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('HYP')">
+                <span class="lbl-top">sinh</span>hyp
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('SIN')">
+                <span class="lbl-top">sin⁻¹</span>sin
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('COS')">
+                <span class="lbl-top">cos⁻¹</span>cos
+            </button>
+
+            <button class="btn btn-rect btn-dark" onclick="pressKey('TAN')">
+                <span class="lbl-top">tan⁻¹</span>tan
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('RCL')">
+                <span class="lbl-top">STO</span>RCL
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('ENG')">
+                <span class="lbl-top">←</span>ENG
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('L_PAREN')">
+                <span class="lbl-top-red">X</span>(
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('R_PAREN')">
+                <span class="lbl-top-red">Y</span>)
+            </button>
+
+            <button class="btn btn-rect btn-dark" onclick="pressKey('SD')">
+                <span class="lbl-top">a b/c</span>S⇔D
+            </button>
+            <button class="btn btn-rect btn-dark" onclick="pressKey('M_PLUS')">
+                <span class="lbl-top-red">M</span>M+
+            </button>
+            <div style="grid-column: span 3;"></div> <button class="btn btn-num" onclick="pressKey('7')">7</button>
+            <button class="btn btn-num" onclick="pressKey('8')">8</button>
+            <button class="btn btn-num" onclick="pressKey('9')">9</button>
+            <button class="btn btn-orange" onclick="pressKey('DEL')">DEL</button>
+            <button class="btn btn-orange" onclick="pressKey('AC')">AC</button>
+
+            <button class="btn btn-num" onclick="pressKey('4')">4</button>
+            <button class="btn btn-num" onclick="pressKey('5')">5</button>
+            <button class="btn btn-num" onclick="pressKey('6')">6</button>
+            <button class="btn btn-num" onclick="pressKey('MUL')">×</button>
+            <button class="btn btn-num" onclick="pressKey('DIV')">÷</button>
+
+            <button class="btn btn-num" onclick="pressKey('1')">1</button>
+            <button class="btn btn-num" onclick="pressKey('2')">2</button>
+            <button class="btn btn-num" onclick="pressKey('3')">3</button>
+            <button class="btn btn-num" onclick="pressKey('ADD')">+</button>
+            <button class="btn btn-num" onclick="pressKey('SUB')">-</button>
+
+            <button class="btn btn-num" onclick="pressKey('0')">0</button>
+            <button class="btn btn-num" onclick="pressKey('DOT')">.</button>
+            <button class="btn btn-num" onclick="pressKey('EXP')">
+                <span class="lbl-top">π</span>×10<sup>x</sup>
+            </button>
+            <button class="btn btn-num" onclick="pressKey('ANS')">
+                <span class="lbl-top">PreAns</span>Ans
+            </button>
+            <button class="btn btn-num" onclick="pressKey('EXE')">=</button>
+        </div>
+    </div>
+
+    <script>
+        const MODES = { NORMAL: 0, SHIFT: 1, ALPHA: 2 };
+        const ANGLE_MODES = { DEG: 'DEG', RAD: 'RAD' };
+
+        let systemState = {
+            inputMode: MODES.NORMAL,
+            angleMode: ANGLE_MODES.DEG,
+            memory: { ANS: 0, X: 0, Y: 0, M: 0 }
+        };
+
+        let tokenStream = [];
+
+        const domMain = document.getElementById('main-display');
+        const domHist = document.getElementById('history-display');
+        const domShiftInd = document.getElementById('shift-indicator');
+        const domAlphaInd = document.getElementById('alpha-indicator');
+        const domAngleInd = document.getElementById('angle-indicator');
+
+        const KEY_MAP = {
+            '0': { type: 'NUM', val: '0', disp: '0' },
+            '1': { type: 'NUM', val: '1', disp: '1' },
+            '2': { type: 'NUM', val: '2', disp: '2' },
+            '3': { type: 'NUM', val: '3', disp: '3' },
+            '4': { type: 'NUM', val: '4', disp: '4' },
+            '5': { type: 'NUM', val: '5', disp: '5' },
+            '6': { type: 'NUM', val: '6', disp: '6' },
+            '7': { type: 'NUM', val: '7', disp: '7' },
+            '8': { type: 'NUM', val: '8', disp: '8' },
+            '9': { type: 'NUM', val: '9', disp: '9' },
+            'DOT': { type: 'NUM', val: '.', disp: '.' },
+            'ADD': { type: 'OP', val: '+', disp: '+', prec: 1, assoc: 'L' },
+            'SUB': { type: 'OP', val: '-', disp: '-', prec: 1, assoc: 'L' },
+            'MUL': { type: 'OP', val: '*', disp: '×', prec: 2, assoc: 'L' },
+            'DIV': { type: 'OP', val: '/', disp: '÷', prec: 2, assoc: 'L' },
+            'POWER': { type: 'OP', val: '^', disp: '^', prec: 3, assoc: 'R' },
+            'SQUARE': { type: 'POST_OP', val: 'sq', disp: '²' },
+            'X_MINUS_1': { type: 'POST_OP', val: 'inv', disp: '⁻¹' },
+            'L_PAREN': { type: 'LPAREN', val: '(', disp: '(' },
+            'R_PAREN': { type: 'RPAREN', val: ')', disp: ')' },
+            'SIN': { type: 'FUNC', val: 'sin', disp: 'sin(' },
+            'COS': { type: 'FUNC', val: 'cos', disp: 'cos(' },
+            'TAN': { type: 'FUNC', val: 'tan', disp: 'tan(' },
+            'SQRT': { type: 'FUNC', val: 'sqrt', disp: '√(' },
+            'LOG': { type: 'FUNC', val: 'log10', disp: 'log(' },
+            'LN': { type: 'FUNC', val: 'ln', disp: 'ln(' },
+            'ANS': { type: 'VAR', val: 'ANS', disp: 'Ans' },
+            'EXP': { type: 'SCI_NOT', val: 'E', disp: '×10^' },
+            'NEG': { type: 'UNARY_MINUS_REQ', val: '-', disp: '-' }, 
+            'M_PLUS': { type: 'MEM_ACTION', val: 'M+', disp: 'M+' },
+            'FRACTION': { type: 'FUNC', val: 'frac', disp: 'frac(' }, 
+            'LOG_BASE': { type: 'FUNC', val: 'logbase', disp: 'log_base(' },
+            'INTEGRAL': { type: 'FUNC', val: 'int', disp: '∫(' },
+            'CALC': { type: 'ACTION', val: 'CALC', disp: 'CALC' },
+            'DEGREE': { type: 'POST_OP', val: 'deg', disp: '°' },
+            'HYP': { type: 'FUNC', val: 'hyp', disp: 'sinh(' },
+            'SD': { type: 'ACTION', val: 'SD', disp: 'S⇔D' },
+            'RCL': { type: 'ACTION', val: 'RCL', disp: 'RCL' }
+        };
+
+        const SHIFT_MAP = {
+            'SIN': { type: 'FUNC', val: 'asin', disp: 'sin⁻¹(' },
+            'COS': { type: 'FUNC', val: 'acos', disp: 'cos⁻¹(' },
+            'TAN': { type: 'FUNC', val: 'atan', disp: 'tan⁻¹(' },
+            'EXP': { type: 'VAR', val: 'PI', disp: 'π' },
+            'X_MINUS_1': { type: 'POST_OP', val: 'fact', disp: '!' }
+        };
+
+        const ALPHA_MAP = {
+            'L_PAREN': { type: 'VAR', val: 'X', disp: 'X' },
+            'R_PAREN': { type: 'VAR', val: 'Y', disp: 'Y' },
+            'M_PLUS': { type: 'VAR', val: 'M', disp: 'M' }
+        };
+
+        function isValidSequence(prev, next) {
+            if (!prev) {
+                if (next.type === 'OP' && next.val !== '-') return false;
+                if (next.type === 'POST_OP') return false;
+                return true;
+            }
+            if (prev.type === 'OP' && next.type === 'OP') return false;
+            if (prev.type === 'OP' && next.type === 'RPAREN') return false;
+            if (prev.type === 'LPAREN' && next.type === 'OP' && next.val !== '-') return false;
+            if (prev.type === 'NUM' && prev.val === '.' && next.val === '.') return false;
+            return true;
+        }
+
+        function handleCharacterLevelDelete() {
+            if (tokenStream.length === 0) return;
+            let lastToken = tokenStream[tokenStream.length - 1];
+            if (lastToken.type === 'NUM' && lastToken.val.length > 1) {
+                lastToken.val = lastToken.val.slice(0, -1);
+                lastToken.disp = lastToken.disp.slice(0, -1);
+            } else {
+                tokenStream.pop();
+            }
+        }
+
+        function pressModifier(mod) {
+            if (mod === 'SHIFT') {
+                systemState.inputMode = (systemState.inputMode === MODES.SHIFT) ? MODES.NORMAL : MODES.SHIFT;
+            } else if (mod === 'ALPHA') {
+                systemState.inputMode = (systemState.inputMode === MODES.ALPHA) ? MODES.NORMAL : MODES.ALPHA;
+            }
+            updateIndicators();
+        }
+
+        function toggleAngleMode() {
+            systemState.angleMode = (systemState.angleMode === ANGLE_MODES.DEG) ? ANGLE_MODES.RAD : ANGLE_MODES.DEG;
+            domAngleInd.innerText = systemState.angleMode;
+        }
+
+        function updateIndicators() {
+            domShiftInd.classList.toggle('active', systemState.inputMode === MODES.SHIFT);
+            domAlphaInd.classList.toggle('active', systemState.inputMode === MODES.ALPHA);
+        }
+
+        function pressKey(keyId) {
+            if (keyId === 'MODE') { toggleAngleMode(); return; }
+            if (keyId === 'AC' || keyId === 'ON') { resetEngine(); return; }
+            if (keyId === 'DEL') { handleCharacterLevelDelete(); renderDisplay(); return; }
+            if (keyId === 'EXE') { evaluateEngine(); return; }
+
+            let targetToken = null;
+            if (systemState.inputMode === MODES.SHIFT) {
+                targetToken = SHIFT_MAP[keyId] || KEY_MAP[keyId];
+            } else if (systemState.inputMode === MODES.ALPHA) {
+                targetToken = ALPHA_MAP[keyId] || KEY_MAP[keyId];
+            } else {
+                targetToken = KEY_MAP[keyId];
+            }
+
+            if (!targetToken) return;
+
+            if (targetToken.type === 'MEM_ACTION' && targetToken.val === 'M+') {
+                evaluateEngine(true); 
+                systemState.inputMode = MODES.NORMAL;
+                updateIndicators();
+                return;
+            }
+
+            let prevToken = tokenStream[tokenStream.length - 1];
+            if (!isValidSequence(prevToken, targetToken)) {
+                domMain.innerText = "Syntax ERROR";
+                tokenStream = [];
+                return;
+            }
+
+            if (targetToken.type === 'NUM' && prevToken && prevToken.type === 'NUM') {
+                if (targetToken.val === '.' && prevToken.val.includes('.')) return; 
+                prevToken.val += targetToken.val;
+                prevToken.disp += targetToken.disp;
+            } else {
+                tokenStream.push({ ...targetToken });
+            }
+
+            systemState.inputMode = MODES.NORMAL;
+            updateIndicators();
+            renderDisplay();
+        }
+
+        function resetEngine() {
+            tokenStream = [];
+            domHist.innerText = "";
+            domMain.innerText = "0";
+            systemState.inputMode = MODES.NORMAL;
+            updateIndicators();
+        }
+
+        function renderDisplay() {
+            if (tokenStream.length === 0) {
+                domMain.innerText = "0";
+                return;
+            }
+            domMain.innerText = tokenStream.map(t => t.disp).join("");
+        }
+
+        function transformUnaryMinus(arr) {
+            let result = [];
+            for (let i = 0; i < arr.length; i++) {
+                let t = arr[i];
+                if ((t.type === 'OP' || t.type === 'UNARY_MINUS_REQ') && t.val === '-' && 
+                   (i === 0 || arr[i - 1].type === 'OP' || arr[i - 1].type === 'LPAREN')) {
+                    result.push({ type: 'LITERAL', val: 0 });
+                    result.push({ type: 'OP', val: '-', disp: '-', prec: 1, assoc: 'L' });
+                } else if (t.type === 'UNARY_MINUS_REQ') {
+                    result.push({ type: 'OP', val: '-', disp: '-', prec: 1, assoc: 'L' });
+                } else {
+                    result.push(t);
+                }
+            }
+            return result;
+        }
+
+        function evaluateEngine(isAccumulatingM = false) {
+            if (tokenStream.length === 0) return;
+
+            try {
+                let combinedInfix = [];
+                for (let i = 0; i < tokenStream.length; i++) {
+                    let t = tokenStream[i];
+                    if (t.type === 'NUM') {
+                        combinedInfix.push({ type: 'LITERAL', val: parseFloat(t.val) });
+                    } else if (t.type === 'VAR') {
+                        combinedInfix.push({ type: 'LITERAL', val: t.val === 'PI' ? Math.PI : systemState.memory[t.val] });
+                    } else {
+                        combinedInfix.push(t);
+                    }
+                }
+
+                combinedInfix = transformUnaryMinus(combinedInfix);
+
+                let eParsedInfix = [];
+                for (let i = 0; i < combinedInfix.length; i++) {
+                    if (combinedInfix[i].type === 'SCI_NOT') {
+                        let base = eParsedInfix.pop();
+                        let exponentToken = combinedInfix[i + 1];
+                        if (!base || base.type !== 'LITERAL') throw "Syntax ERROR";
+                        let sign = 1;
+                        let j = i + 1;
+                        if (exponentToken && exponentToken.type === 'OP' && exponentToken.val === '-') {
+                            sign = -1;
+                            j++;
+                            exponentToken = combinedInfix[j];
+                        }
+                        if (!exponentToken || exponentToken.type !== 'LITERAL') throw "Syntax ERROR";
+                        let exponent = sign * exponentToken.val;
+                        eParsedInfix.push({ type: 'LITERAL', val: base.val * Math.pow(10, exponent) });
+                        i = j; 
+                    } else {
+                        eParsedInfix.push(combinedInfix[i]);
+                    }
+                }
+
+                let processedInfix = [];
+                for (let i = 0; i < eParsedInfix.length; i++) {
+                    let current = eParsedInfix[i];
+                    processedInfix.push(current);
+                    if (i < eParsedInfix.length - 1) {
+                        let next = eParsedInfix[i + 1];
+                        let currentIsFactor = (current.type === 'LITERAL' || current.type === 'POST_OP' || current.type === 'RPAREN');
+                        let nextIsFactor = (next.type === 'LITERAL' || next.type === 'FUNC' || next.type === 'LPAREN');
+                        if (currentIsFactor && nextIsFactor) {
+                            processedInfix.push({ type: 'OP', val: '*', disp: '×', prec: 2, assoc: 'L' });
+                        }
+                    }
+                }
+
+                let outputQueue = [];
+                let operatorStack = [];
+
+                for (let i = 0; i < processedInfix.length; i++) {
+                    let token = processedInfix[i];
+                    if (token.type === 'LITERAL') {
+                        outputQueue.push(token);
+                    } else if (token.type === 'FUNC' || token.type === 'LPAREN') {
+                        operatorStack.push(token);
+                    } else if (token.type === 'POST_OP') {
+                        outputQueue.push(token);
+                    } else if (token.type === 'OP') {
+                        while (operatorStack.length > 0 && operatorStack[operatorStack.length - 1].type === 'OP') {
+                            let topOp = operatorStack[operatorStack.length - 1];
+                            if ((token.assoc === 'L' && token.prec <= topOp.prec) || (token.assoc === 'R' && token.prec < topOp.prec)) {
+                                outputQueue.push(operatorStack.pop());
+                            } else {
+                                break;
+                            }
+                        }
+                        operatorStack.push(token);
+                    } else if (token.type === 'RPAREN') {
+                        while (operatorStack.length > 0 && operatorStack[operatorStack.length - 1].type !== 'LPAREN') {
+                            outputQueue.push(operatorStack.pop());
+                        }
+                        if (operatorStack.length === 0) throw "Syntax ERROR";
+                        operatorStack.pop();
+                        if (operatorStack.length > 0 && operatorStack[operatorStack.length - 1].type === 'FUNC') {
+                            outputQueue.push(operatorStack.pop());
+                        }
+                    }
+                }
+                while (operatorStack.length > 0) {
+                    let top = operatorStack.pop();
+                    if (top.type === 'LPAREN' || top.type === 'RPAREN') throw "Syntax ERROR";
+                    outputQueue.push(top);
+                }
+
+                let evalStack = [];
+                for (let i = 0; i < outputQueue.length; i++) {
+                    let token = outputQueue[i];
+                    if (token.type === 'LITERAL') {
+                        evalStack.push(token.val);
+                    } else if (token.type === 'POST_OP') {
+                        let arg = evalStack.pop();
+                        if (arg === undefined) throw "Syntax ERROR";
+                        if (token.val === 'sq') evalStack.push(Math.pow(arg, 2));
+                        if (token.val === 'deg') evalStack.push(arg); 
+                        if (token.val === 'fact') {
+                            if (arg < 0 || arg % 1 !== 0) throw "Math ERROR";
+                            let f = 1; for(let n = 2; n <= arg; n++) f *= n;
+                            evalStack.push(f);
+                        }
+                        if (token.val === 'inv') {
+                            if (arg === 0) throw "Math ERROR";
+                            evalStack.push(1 / arg);
+                        }
+                    } else if (token.type === 'FUNC') {
+                        let arg = evalStack.pop();
+                        if (arg === undefined) throw "Syntax ERROR";
+                        let toRad = (deg) => deg * Math.PI / 180;
+                        let fromRad = (rad) => rad * 180 / Math.PI;
+                        let isDeg = systemState.angleMode === ANGLE_MODES.DEG;
+
+                        if (token.val === 'sin') evalStack.push(Math.sin(isDeg ? toRad(arg) : arg));
+                        else if (token.val === 'cos') evalStack.push(Math.cos(isDeg ? toRad(arg) : arg));
+                        else if (token.val === 'tan') {
+                            if (isDeg && Math.abs(arg % 180) === 90) throw "Math ERROR";
+                            evalStack.push(Math.tan(isDeg ? toRad(arg) : arg));
+                        }
+                        else if (token.val === 'asin') {
+                            if (arg < -1 || arg > 1) throw "Math ERROR";
+                            let res = Math.asin(arg);
+                            evalStack.push(isDeg ? fromRad(res) : res);
+                        }
+                        else if (token.val === 'acos') {
+                            if (arg < -1 || arg > 1) throw "Math ERROR";
+                            let res = Math.acos(arg);
+                            evalStack.push(isDeg ? fromRad(res) : res);
+                        }
+                        else if (token.val === 'atan') {
+                            let res = Math.atan(arg);
+                            evalStack.push(isDeg ? fromRad(res) : res);
+                        }
+                        else if (token.val === 'sqrt') {
+                            if (arg < 0) throw "Math ERROR";
+                            evalStack.push(Math.sqrt(arg));
+                        }
+                        else if (token.val === 'log10') {
+                            if (arg <= 0) throw "Math ERROR";
+                            evalStack.push(Math.log10(arg));
+                        }
+                        else if (token.val === 'ln') {
+                            if (arg <= 0) throw "Math ERROR";
+                            evalStack.push(Math.log(arg));
+                        }
+                        else if (token.val === 'frac' || token.val === 'logbase' || token.val === 'int' || token.val === 'hyp') {
+                            evalStack.push(arg); 
+                        }
+                    } else if (token.type === 'OP') {
+                        let b = evalStack.pop();
+                        let a = evalStack.pop();
+                        if (a === undefined || b === undefined) throw "Syntax ERROR";
+                        if (token.val === '+') evalStack.push(a + b);
+                        else if (token.val === '-') evalStack.push(a - b);
+                        else if (token.val === '*') evalStack.push(a * b);
+                        else if (token.val === '/') {
+                            if (b === 0) throw "Math ERROR";
+                            evalStack.push(a / b);
+                        }
+                        else if (token.val === '^') evalStack.push(Math.pow(a, b));
+                    }
+                }
+
+                if (evalStack.length !== 1) throw "Syntax ERROR";
+                let finalValue = evalStack[0];
+                if (finalValue % 1 !== 0) finalValue = parseFloat(finalValue.toFixed(10));
+
+                if (isAccumulatingM) {
+                    systemState.memory.M += finalValue;
+                    domMain.innerText = "0";
+                    domHist.innerText = "M+ Ans";
+                    tokenStream = [];
+                } else {
+                    domHist.innerText = tokenStream.map(t => t.disp).join("") + " =";
+                    domMain.innerText = finalValue;
+                    systemState.memory.ANS = finalValue;
+                    tokenStream = [{ type: 'VAR', val: 'ANS', disp: 'Ans' }];
+                }
+            } catch (err) {
+                domMain.innerText = err;
+                tokenStream = [];
+            }
+        }
+    </script>
+</body>
+</html>
